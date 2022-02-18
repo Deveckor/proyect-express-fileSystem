@@ -4,17 +4,17 @@ const app = express();
 const port = 8080;
 
 const listJson = fs.readFileSync('./koders.json');
-const koders = JSON.parse(listJson);
 
 
 
-app.use(express.json());
+
+
 
 app
     .get('/koders',(req,res) => {
         
            
-                res.write(JSON.stringify(koders));
+                res.write(listJson);
            
             
         res.end();
