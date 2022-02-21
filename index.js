@@ -3,8 +3,7 @@ const fs = require('fs');
 const app = express();
 const port = 8080;
 
-const listJson = fs.readFileSync('./koders.json','utf-8');
-const koders = JSON.parse(listJson);
+
 
 
 
@@ -13,36 +12,86 @@ app.use(express.json());
 
 
 app
-    .get('/koders',(req,res) => {
-        
-           
-               res.json(koders);
-           
-            
-        
+    .get('/koders', (req, res) => {
+        const listJson = fs.readFileSync('./koders.json', 'utf-8');
+        const kod = JSON.parse(listJson);
+
+        res.json(kod);
+
+
+
     })
-    .post('/koders',(req,res) => {
-        const body = req.body;
-        
-        
-        fs.readFile('./koders.json',(err, data) => {
-            if (err) {
-                return console.log(err);
+    .get('/koders/:id', (req, res) => {
+        const idKoder = req.params.id;
+        const listJson = fs.readFileSync('./koders.json', 'utf-8');
+        const kod = JSON.parse(listJson);
+
+        kod.koders.forEach(el => {
+            if (parseInt(idKoder) === el.id) {
+                res.json(el)
             }
-            let koders = JSON.parse(data);
-            let koder = koders.koders
-            koder.push(body);
-            
-            
-            fs.writeFile('./koders.json',JSON.stringify(koders), (err) =>{
-                if (err) {
-                    return console.log(err)
-                }
-            })
-        })
-        res.end()
+        });
+        
     })
-    .listen(port, ()=>{
+    .post('/koders', (req, res) => {
+        const listJson = fs.readFileSync('./koders.json', 'utf-8');
+        const kod = JSON.parse(listJson);
+        const body = req.body;
+        body.id = kod.koders.length+1
+
+        let koder = kod.koders
+        koder.push(body);
+
+        fs.writeFileSync('./koders.json', JSON.stringify(kod, null, 2));
+
+
+
+        res.json({success: true})
+    })
+    .patch('/koders/:id', async (req, res) => {
+          
+          const idKoder = req.params.id;
+          const nameKoder = req.body.name;
+          const content = await fs.promises.readFile('./koders.json');
+          const json = JSON.parse(content);
+
+        
+          const newKoders = json.koders.map((koder, index)=>{
+                if (koder.id === parseInt(idKoder)) {
+                    koder.name = nameKoder
+                }
+                return koder
+          })
+          json.koders = newKoders;
+          console.log(json);
+
+          await fs.promises.writeFile('./koders.json', JSON.stringify(json, null, 2),'utf-8');
+          res.json({
+              success: true,
+          })
+    })
+    .delete('/koders/:id', async (req, res) => {
+          const idKoder = req.params.id;
+          const content = await fs.promises.readFile('./koders.json');
+          const json = JSON.parse(content);
+          let index = 1;
+          let newKoders = [];
+
+          json.koders.forEach(el => {
+              if (parseInt(idKoder) != el.id) {
+                  el.id = index
+                  newKoders.push(el)
+
+                  index++;
+              }
+          });
+          
+          json.koders = newKoders;
+          await fs.promises.writeFile('./koders.json', JSON.stringify(json,null, 2),'utf-8');
+          res.json({success: true});
+    })
+
+    app.listen(port, () => {
         console.log(`Servidor escuchando en el puerto ${port}`);
     })
 
